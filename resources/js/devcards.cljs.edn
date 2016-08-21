@@ -1,0 +1,3 @@
+{:require [omify.devcards.core]
+ :init-fns [omify.devcards.core/init!]
+ :compiler-options {:asset-path "js/devcards.out"}}
