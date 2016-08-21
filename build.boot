@@ -37,7 +37,7 @@
 (task-options!
   pom {:project 'omify
        :version +version+
-       :description "Make plain React components Om Next compatible"
+       :description "om.next-ify plain React components."
        :url "https://github.com/compassus/omify"
        :scm {:url "https://github.com/compassus/omify"}
        :license {"name" "Eclipse Public License"
