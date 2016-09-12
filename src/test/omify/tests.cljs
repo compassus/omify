@@ -119,6 +119,7 @@
                (.. this -state -foo))))}))
 
 (deftest test-omify-component
+  (reset! update-atom {})
   (let [omified (omify OtherExample
                   static om/Ident
                   (ident [_ _]
@@ -132,6 +133,7 @@
     (is (= (pr-str omified) "omify.tests/OtherExample"))))
 
 (deftest test-omify-object-proto
+  (reset! update-atom {})
   (let [omified (omify OtherExample
                   Object
                   (componentWillMount [_])
@@ -243,3 +245,68 @@
     (let [updated @update-atom]
       (is (= (-> updated :shouldComponentUpdate :state (gobj/get "foo")) 43))
       (is (= (-> updated :shouldComponentUpdate :props (gobj/get "message")) msg)))))
+
+(def OMFY-2-Component
+  (js/React.createClass
+    #js {:getInitialState
+         (fn []
+           #js {:a 1})
+         :componentWillMount
+         (fn []
+           (this-as this
+             (swap! update-atom assoc
+               :componentWillMount (.. this -props))))
+         :componentDidMount
+         (fn []
+           (this-as this
+             (swap! update-atom assoc
+               :componentDidMount (.. this -props))))
+         :componentWillReceiveProps
+         (fn [next-props]
+           (this-as this
+             (swap! update-atom assoc
+               :componentWillReceiveProps next-props)))
+         :componentWillUpdate
+         (fn [next-props next-state]
+           (swap! update-atom assoc
+             :componentWillUpdate next-props))
+         :componentDidUpdate
+         (fn [prev-props prev-state]
+           (this-as this
+             (swap! update-atom assoc
+               :componentDidUpdate prev-props)))
+         :componentWillUnmount
+         (fn []
+           (this-as this
+             (swap! update-atom assoc
+               :componentWillUnmount (.. this -props))))
+         :render
+         (fn []
+           (this-as this
+             (js/React.DOM.div nil
+               (.. this -props -message))))}))
+
+(deftest test-OMFY-2
+  (reset! update-atom {})
+  (let [omified (omify OMFY-2-Component
+                  Object
+                  (render [this]
+                    (js/React.DOM.div #js {:onClick #(.setState this #js {:a 2})}
+                      (.. this -props -foo))))
+        shallow-renderer (.createRenderer test-utils)
+        comp ((omfy/factory omified) (om/computed {} {:foo 42}))
+        _ (.render shallow-renderer comp)
+        c (.getRenderOutput shallow-renderer)]
+    (.componentDidMount (.getMountedInstance shallow-renderer))
+    (.onClick (.. c -props))
+    (.render shallow-renderer ((omfy/factory omified) (om/computed {} {:foo 43})))
+    (.unmount shallow-renderer)
+    (is (= (.. c -props -children) 42))
+    (let [updated @update-atom]
+      (is (= (-> updated :componentWillMount (gobj/get "foo")) 42))
+      (is (= (-> updated :componentDidMount (gobj/get "foo")) 42))
+      (is (= (-> updated :componentDidUpdate (gobj/get "foo")) 42))
+      (are [method] (= (-> updated (get method) (gobj/get "foo")) 43)
+        :componentWillReceiveProps
+        :componentWillUpdate
+        :componentWillUnmount))))

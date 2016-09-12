@@ -30,23 +30,26 @@
        ~'componentWillReceiveProps
        ([~this next-props#]
         (when-let [f# (goog.object/get ~old-meths "componentWillReceiveProps")]
-          (.call f# ~this (cljs.core/clj->js next-props#))))
+          (.call f# ~this
+            (cljs.core/clj->js (merge next-props#
+                                 (om.next/get-computed next-props#))))))
        ~'shouldComponentUpdate
        ([~this next-props# next-state#]
         (if-let [f# (goog.object/get ~old-meths "shouldComponentUpdate")]
-          (let [computed#  (goog.object/clone next-props#) ; (cljs.core/clj->js next-props#)
-                ]
+          (let [next-props# (goog.object/clone next-props#)]
             (doseq [prop# ["omcljs$reconciler" "omcljs$reactKey" "omcljs$value"
-                          "omcljs$path" "omcljs$parent" "omcljs$shared"
-                          "omcljs$instrument" "omcljs$depth"]]
-              (goog.object/remove computed# prop#))
-            (.call f# ~this computed# next-state#))
+                           "omcljs$path" "omcljs$parent" "omcljs$shared"
+                           "omcljs$instrument" "omcljs$depth"]]
+              (goog.object/remove next-props# prop#))
+            (.call f# ~this next-props# next-state#))
           true))
        ~'componentWillUpdate
        ([~this next-props# next-state#]
         (let [next-props# (om.next/-next-props next-props# ~this)
               ret# (when-let [f# (goog.object/get ~old-meths "componentWillUpdate")]
-                     (.call f# ~this (cljs.core/clj->js next-props#) next-state#))]
+                     (.call f# ~this
+                       (cljs.core/clj->js (merge next-props# (om.next/get-computed next-props#)))
+                       next-state#))]
           (when (cljs.core/implements? om.next/Ident ~this)
             (let [ident# (om.next/ident ~this (om.next/props ~this))
                   next-ident# (om.next/ident ~this next-props#)]

@@ -41,7 +41,8 @@
                   :omcljs$shared     om/*shared*
                   :omcljs$instrument om/*instrument*
                   :omcljs$depth      om/*depth*}
-             (clj->js props))
+             (clj->js props)
+             (clj->js (om/get-computed props)))
            (util/force-children children)))))))
 
 ;; TODO:
