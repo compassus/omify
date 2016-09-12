@@ -110,10 +110,28 @@
                 (:name (ana/resolve-var (dissoc env :locals) name))
                 name)]
     `(let [~x (if ~mutate?
-                ~name
+                (let [original# ~name]
+                  (defn ~(with-meta name {:jsdoc ["@constructor"]}) []
+                    (cljs.core/this-as this#
+                      (.call original# this# (cljs.core/js-arguments))
+                      (if-not (nil? (.-initLocalState this#))
+                        (let [st# (.initLocalState this#)]
+                          (set! (.-state this#) (js/Object.assign (.initLocalState this#)
+                                                  (goog.object/get st# "omcljs$state"))))
+                        (when (nil? (.-state this#))
+                          (set! (.-state this#) (cljs.core/js-obj))))
+                      this#))
+                  (set! (.. ~name -prototype) (.. original# -prototype))
+                  ~name)
                 (let [clone# (fn ~(with-meta 'Constructor {:jsdoc ["@constructor"]}) []
                                (cljs.core/this-as this#
                                  (.call ~name this# (cljs.core/js-arguments))
+                                 (if-not (nil? (.-initLocalState this#))
+                                   (let [st# (.initLocalState this#)]
+                                     (set! (.-state this#) (js/Object.assign (.initLocalState this#)
+                                                             (goog.object/get st# "omcljs$state"))))
+                                   (when (nil? (.-state this#))
+                                     (set! (.-state this#) (cljs.core/js-obj))))
                                  this#))]
                   (set! (.. clone# -prototype) (js/Object.create (.. ~name -prototype)))
                   (set! (.. clone# -defaultProps) (.. ~name -defaultProps))

@@ -310,3 +310,69 @@
         :componentWillReceiveProps
         :componentWillUpdate
         :componentWillUnmount))))
+
+(def OMFY-1-Component-1
+  (js/React.createClass
+    #js {:render
+         (fn []
+           (this-as this
+             (js/React.DOM.div nil
+               (.. this -props -foo))))}))
+
+(def OMFY-1-Component-2
+  (js/React.createClass
+    #js {:render
+         (fn []
+           (this-as this
+             (js/React.DOM.div nil
+               (.. this -state -foo))))}))
+
+(def OMFY-1-Component-3
+  (js/React.createClass
+    #js {:render
+         (fn []
+           (this-as this
+             (js/React.DOM.div nil
+               (.. this -props -foo))))}))
+
+(deftest test-omfy-1
+  (testing "OMFY-1: omify"
+    (let [omified (omify OMFY-1-Component-1
+                    static om/IQuery
+                    (query [this]
+                      [:foo]))
+          shallow-renderer (.createRenderer test-utils)
+          comp ((omfy/factory omified) {:foo 42})
+          _ (.render shallow-renderer comp)
+          _ (.render shallow-renderer ((omfy/factory omified) {:foo 43}))
+          c (.getRenderOutput shallow-renderer)]
+      (is (= (.. c -props -children) 43)))
+    (let [omified (omify OMFY-1-Component-2
+                    Object
+                    (initLocalState [this]
+                      #js {:foo 42}))
+          shallow-renderer (.createRenderer test-utils)
+          comp ((omfy/factory omified) {})
+          _ (.render shallow-renderer comp)
+          c (.getRenderOutput shallow-renderer)]
+      (is (= (.. c -props -children) 42))))
+  (testing "OMFY-1: omify!"
+    (omify! OMFY-1-Component-3
+      static om/IQuery
+      (query [this]
+        [:foo]))
+    (let [shallow-renderer (.createRenderer test-utils)
+          comp ((omfy/factory OMFY-1-Component-3) {:foo 42})
+          _ (.render shallow-renderer comp)
+          _ (.render shallow-renderer ((omfy/factory OMFY-1-Component-3) {:foo 43}))
+          c (.getRenderOutput shallow-renderer)]
+      (is (= (.. c -props -children) 43)))
+    (omify! OMFY-1-Component-2
+      Object
+      (initLocalState [this]
+        #js {:foo 42}))
+    (let [shallow-renderer (.createRenderer test-utils)
+          comp ((omfy/factory OMFY-1-Component-2) {})
+          _ (.render shallow-renderer comp)
+          c (.getRenderOutput shallow-renderer)]
+      (is (= (.. c -props -children) 42)))))
