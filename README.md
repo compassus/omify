@@ -7,7 +7,7 @@ om.next-ify plain React components.
 Leiningen dependency information:
 
 ```clojure
-[omify "0.1.0"]
+[omify "0.1.1"]
 ```
 
 Maven dependency information:
@@ -16,7 +16,7 @@ Maven dependency information:
 <dependency>
   <groupId>omify</groupId>
   <artifactId>omify</artifactId>
-  <version>0.1.0</version>
+  <version>0.1.1</version>
 </dependency>
 ```
 
